@@ -1,0 +1,205 @@
+import tkinter as tk
+import time
+import tkinter.messagebox as messagebox
+from .AiPlayer import AIPlayer
+
+# 棋盘大小
+BOARD_SIZE = 8
+# 每个格子的大小
+CELL_SIZE = 80
+
+class ReversiGame:
+    def has_valid_move(self, player):
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
+                if self.is_valid_move(i, j, player):
+                    return True
+        return False
+    def __init__(self, root):
+        self.ai_player = AIPlayer(color='O')
+
+    def get_ai_move(self):
+        # 转换棋盘格式
+        ai_board = [[0] * 8 for _ in range(8)]
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] == 1:
+                    ai_board[i][j] = 'X'
+                elif self.board[i][j] == 2:
+                    ai_board[i][j] = 'O'
+                else:
+                    ai_board[i][j] = '.'
+        # 获取AI走法
+        ai_move = self.ai_player.get_move(ai_board)
+        if ai_move:
+            col = ord(ai_move[0]) - ord('A')
+            row = int(ai_move[1]) - 1
+            return row, col
+        else:
+            return None, None
+
+        
+        self.ai_player = AIPlayer(color='O')
+        self.root = root
+        self.root.title('黑白棋')
+        self.canvas = tk.Canvas(root, width=BOARD_SIZE * CELL_SIZE, height=BOARD_SIZE * CELL_SIZE, bg='#3CB371')
+        self.canvas.pack()
+        self.board = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.hints = []
+        self.current_player = 1
+        self.score_label = tk.Label(root, text='白棋: 2 黑棋: 2')
+        self.score_label.pack()
+        self.initialize_board()
+        self.draw_board()
+        self.canvas.bind('<Button-1>', self.on_click)
+        self.reset_button = tk.Button(root, text='重新开始', command=self.reset_game)
+        self.reset_button.pack()
+
+    def initialize_board(self):
+        self.board = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.board[3][3] = 1
+        self.board[3][4] = 2
+        self.board[4][3] = 2
+        self.board[4][4] = 1
+
+    def reset_game(self):
+        self.initialize_board()
+        self.current_player = 1
+        self.draw_board()
+        self.update_score()
+        # 清空提示
+        for hint in self.hints:
+            self.canvas.delete(hint)
+        self.hints = []
+
+    def update_score(self):
+        white_score = sum(row.count(1) for row in self.board)
+        black_score = sum(row.count(2) for row in self.board)
+        self.score_label.config(text=f'白棋: {white_score} 黑棋: {black_score}')
+
+    def make_move(self, row, col):
+        self.board[row][col] = self.current_player
+        opponent = 3 - self.current_player
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+
+        for dr, dc in directions:
+            to_flip = []
+            r, c = row + dr, col + dc
+
+            while 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE and self.board[r][c] == opponent:
+                to_flip.append((r, c))
+                r += dr
+                c += dc
+
+            if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE and self.board[r][c] == self.current_player:
+                for r_flip, c_flip in to_flip:
+                    self.board[r_flip][c_flip] = self.current_player
+
+        # 切换玩家
+        opponent = 3 - self.current_player
+        if opponent == 2:
+            # AI玩家落子
+            ai_row, ai_col = self.get_ai_move()
+            if ai_row is not None and ai_col is not None:
+                self.make_move(ai_row, ai_col)
+                self.draw_board()
+        
+        if self.has_valid_move(opponent):
+            self.current_player = opponent
+        elif self.has_valid_move(self.current_player):
+            # 对手无合法移动，当前玩家继续
+            pass
+        else:
+            # 双方都无合法移动，游戏结束
+            pass
+        self.update_score()
+        try:
+            if not self.has_valid_move(1) and not self.has_valid_move(2):
+                white_score = sum(row.count(1) for row in self.board)
+                black_score = sum(row.count(2) for row in self.board)
+                if white_score > black_score:
+                    messagebox.showinfo('游戏结束', '白棋获胜！')
+                elif white_score < black_score:
+                    messagebox.showinfo('游戏结束', '黑棋获胜！')
+                else:
+                    messagebox.showinfo('游戏结束', '平局！')
+        except Exception as e:
+            print(f'游戏结束判断时出错: {e}')
+
+    def draw_board(self):
+        # 绘制棋盘网格
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
+                x1 = j * CELL_SIZE
+                y1 = i * CELL_SIZE
+                x2 = x1 + CELL_SIZE
+                y2 = y1 + CELL_SIZE
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill='#228B22', outline='#006400', width=2)
+        # 绘制棋子
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
+                if self.board[i][j] == 1:
+                    x = j * CELL_SIZE + CELL_SIZE // 2
+                    y = i * CELL_SIZE + CELL_SIZE // 2
+                    self.canvas.create_oval(x - 35, y - 35, x + 35, y + 35, fill='white', outline='gray', width=2)
+                elif self.board[i][j] == 2:
+                    x = j * CELL_SIZE + CELL_SIZE // 2
+                    y = i * CELL_SIZE + CELL_SIZE // 2
+                    self.canvas.create_oval(x - 35, y - 35, x + 35, y + 35, fill='black', outline='gray', width=2)
+        self.show_hints()
+
+    def show_hints(self):
+        for hint in self.hints:
+            self.canvas.delete(hint)
+        self.hints = []
+        # 显示当前玩家的合法落子位置
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
+                if self.is_valid_move(i, j, self.current_player):
+                    x1 = j * CELL_SIZE + 10
+                    y1 = i * CELL_SIZE + 10
+                    x2 = x1 + CELL_SIZE - 20
+                    y2 = y1 + CELL_SIZE - 20
+                    hint = self.canvas.create_rectangle(x1, y1, x2, y2, fill='yellow', stipple='gray50')
+                    self.hints.append(hint)
+
+    def on_click(self, event):
+        col = event.x // CELL_SIZE
+        row = event.y // CELL_SIZE
+        # 检查当前玩家的合法移动        
+        if self.current_player == 1 and self.is_valid_move(row, col, self.current_player):
+            self.make_move(row, col)
+            self.draw_board()
+
+    def is_valid_move(self, row, col, player):
+        # 检查落子位置是否在棋盘内且为空
+        if not (0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE) or self.board[row][col] != 0:
+            return False
+
+        # 定义八个方向
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+        # 确定对手玩家
+        opponent = 3 - player
+
+        # 遍历所有方向
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            seen_opponent = False
+
+            # 沿着当前方向检查是否能翻转棋子
+            while 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE:
+                if self.board[r][c] == opponent:
+                    seen_opponent = True
+                    r += dr
+                    c += dc
+                elif self.board[r][c] == player and seen_opponent:
+                    return True
+                else:
+                    break
+
+        return False
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    game = ReversiGame(root)
+    root.mainloop()
