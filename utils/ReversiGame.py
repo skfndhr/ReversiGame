@@ -1,7 +1,6 @@
 import tkinter as tk
 import time
 import tkinter.messagebox as messagebox
-from .AiPlayer import AIPlayer
 
 # 棋盘大小
 BOARD_SIZE = 8
@@ -16,30 +15,6 @@ class ReversiGame:
                     return True
         return False
     def __init__(self, root):
-        self.ai_player = AIPlayer(color='O')
-
-    def get_ai_move(self):
-        # 转换棋盘格式
-        ai_board = [[0] * 8 for _ in range(8)]
-        for i in range(8):
-            for j in range(8):
-                if self.board[i][j] == 1:
-                    ai_board[i][j] = 'X'
-                elif self.board[i][j] == 2:
-                    ai_board[i][j] = 'O'
-                else:
-                    ai_board[i][j] = '.'
-        # 获取AI走法
-        ai_move = self.ai_player.get_move(ai_board)
-        if ai_move:
-            col = ord(ai_move[0]) - ord('A')
-            row = int(ai_move[1]) - 1
-            return row, col
-        else:
-            return None, None
-
-        
-        self.ai_player = AIPlayer(color='O')
         self.root = root
         self.root.title('黑白棋')
         self.canvas = tk.Canvas(root, width=BOARD_SIZE * CELL_SIZE, height=BOARD_SIZE * CELL_SIZE, bg='#3CB371')
@@ -97,13 +72,6 @@ class ReversiGame:
 
         # 切换玩家
         opponent = 3 - self.current_player
-        if opponent == 2:
-            # AI玩家落子
-            ai_row, ai_col = self.get_ai_move()
-            if ai_row is not None and ai_col is not None:
-                self.make_move(ai_row, ai_col)
-                self.draw_board()
-        
         if self.has_valid_move(opponent):
             self.current_player = opponent
         elif self.has_valid_move(self.current_player):
@@ -167,9 +135,12 @@ class ReversiGame:
         col = event.x // CELL_SIZE
         row = event.y // CELL_SIZE
         # 检查当前玩家的合法移动        
-        if self.current_player == 1 and self.is_valid_move(row, col, self.current_player):
+        if self.is_valid_move(row, col, self.current_player):
             self.make_move(row, col)
             self.draw_board()
+
+    def game_over(self):
+        return not self.has_valid_move(1) and not self.has_valid_move(2)
 
     def is_valid_move(self, row, col, player):
         # 检查落子位置是否在棋盘内且为空
