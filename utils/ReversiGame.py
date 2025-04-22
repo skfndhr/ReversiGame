@@ -1,7 +1,7 @@
 import tkinter as tk
 import time
 import tkinter.messagebox as messagebox
-
+import random
 # 棋盘大小
 BOARD_SIZE = 8
 # 每个格子的大小
@@ -14,8 +14,9 @@ class ReversiGame:
                 if self.is_valid_move(i, j, player):
                     return True
         return False
-    def __init__(self, root):
+    def __init__(self, root,mode):
         self.root = root
+        self.mode=mode
         self.root.title('黑白棋')
         self.canvas = tk.Canvas(root, width=BOARD_SIZE * CELL_SIZE, height=BOARD_SIZE * CELL_SIZE, bg='#3CB371')
         self.canvas.pack()
@@ -26,6 +27,14 @@ class ReversiGame:
         self.score_label.pack()
         self.initialize_board()
         self.draw_board()
+
+
+
+        if self.mode==1:
+            self.make_move(3, 5)  # 机器先手
+            self.draw_board()  # 绘制初始状态
+            self.update_score()  # 更新分数
+        
         self.canvas.bind('<Button-1>', self.on_click)
         self.reset_button = tk.Button(root, text='重新开始', command=self.reset_game)
         self.reset_button.pack()
@@ -138,6 +147,11 @@ class ReversiGame:
         if self.is_valid_move(row, col, self.current_player):
             self.make_move(row, col)
             self.draw_board()
+            while self.mode==self.current_player:
+                self.ai_move()
+                self.draw_board()
+
+
 
     def game_over(self):
         return not self.has_valid_move(1) and not self.has_valid_move(2)
@@ -169,6 +183,29 @@ class ReversiGame:
                     break
 
         return False
+    def ai_move(self):
+        
+        valid_moves = [(i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE) if self.is_valid_move(i, j, self.mode)]
+        if valid_moves:
+            row, col = random.choice(valid_moves)
+            self.make_move(row, col)
+        else:
+            # 如果没有合法移动，切换玩家
+            opponent = 3 - self.current_player
+            self.update_score()
+            try:
+                if not self.has_valid_move(1) and not self.has_valid_move(2):
+                    white_score = sum(row.count(1) for row in self.board)
+                    black_score = sum(row.count(2) for row in self.board)
+                    if white_score > black_score:
+                        messagebox.showinfo('游戏结束', '白棋获胜！')
+                    elif white_score < black_score:
+                        messagebox.showinfo('游戏结束', '黑棋获胜！')
+                    else:
+                        messagebox.showinfo('游戏结束', '平局！')
+            except Exception as e:
+                print(f'游戏结束判断时出错: {e}')
+
 
 if __name__ == '__main__':
     root = tk.Tk()

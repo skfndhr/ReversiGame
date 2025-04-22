@@ -161,146 +161,146 @@ from copy import deepcopy
 #             return chr(ord('A') + col) + str(row + 1)
 
 # 游戏类
-class Game(object):
-    def __init__(self, black_player, white_player):
-        self.game_init()
-        self.black_player = black_player
-        self.white_player = white_player
+# class Game(object):
+#     def __init__(self, black_player, white_player):
+#         self.game_init()
+#         self.black_player = black_player
+#         self.white_player = white_player
 
-    def game_init(self):
-        self.board = ReversiBoard()
-        self.current_player = None
+#     def game_init(self):
+#         self.board = ReversiBoard()
+#         self.current_player = None
 
-    # 切换玩家
-    def switch_player(self, black_player, white_player):
-        if self.current_player is None:
-            return black_player
-        else:
-            if self.current_player == self.black_player:
-                return white_player
-            else:
-                return black_player
+#     # 切换玩家
+#     def switch_player(self, black_player, white_player):
+#         if self.current_player is None:
+#             return black_player
+#         else:
+#             if self.current_player == self.black_player:
+#                 return white_player
+#             else:
+#                 return black_player
 
-    # 打印获胜者
-    def print_winner(self, winner):
-        print(['黑棋获胜!', '白棋获胜!', '平局'][winner])
+#     # 打印获胜者
+#     def print_winner(self, winner):
+#         print(['黑棋获胜!', '白棋获胜!', '平局'][winner])
 
-    # 强制输棋
-    def force_loss(self, is_timeout=False, is_board=False, is_legal=False):
-        if self.current_player == self.black_player:
-            win_color = '白棋 - O'
-            loss_color = '黑棋 - X'
-            winner = 1
-        else:
-            win_color = '黑棋 - X'
-            loss_color = '白棋 - O'
-            winner = 0
-        if is_timeout:
-            print(f'\n{loss_color} 思考超过 60s, {win_color} 胜')
-        if is_legal:
-            print(f'\n{loss_color} 落子 3 次不符合规则, 故 {win_color} 胜')
-        if is_board:
-            print(f'\n{loss_color} 擅自改动棋盘判输, 故 {win_color} 胜')
-        diff = 0
-        return winner, diff
+#     # 强制输棋
+#     def force_loss(self, is_timeout=False, is_board=False, is_legal=False):
+#         if self.current_player == self.black_player:
+#             win_color = '白棋 - O'
+#             loss_color = '黑棋 - X'
+#             winner = 1
+#         else:
+#             win_color = '黑棋 - X'
+#             loss_color = '白棋 - O'
+#             winner = 0
+#         if is_timeout:
+#             print(f'\n{loss_color} 思考超过 60s, {win_color} 胜')
+#         if is_legal:
+#             print(f'\n{loss_color} 落子 3 次不符合规则, 故 {win_color} 胜')
+#         if is_board:
+#             print(f'\n{loss_color} 擅自改动棋盘判输, 故 {win_color} 胜')
+#         diff = 0
+#         return winner, diff
 
-    # 运行游戏
-    def run(self):
-        total_time = {"X": 0, "O": 0}
-        step_time = {"X": 0, "O": 0}
-        winner = None
-        diff = -1
-        print('\n=====开始游戏!=====\n')
-        self.board.display(step_time, total_time)
-        while True:
-            self.current_player = self.switch_player(self.black_player, self.white_player)
-            start_time = time.time()
-            color = "X" if self.current_player == self.black_player else "O"
-            legal_actions = list(self.board.get_legal_actions(color))
-            if len(legal_actions) == 0:
-                if self.game_over():
-                    winner, diff = self.board.get_winner()
-                    break
-                else:
-                    continue
-            board = deepcopy(self.board._board)
-            try:
-                action = self.current_player.get_move(self.board)
-                if action == "Q":
-                    break
-                if action not in legal_actions:
-                    print("你落子不符合规则, 请重新落子！")
-                    continue
-            except Exception as e:
-                winner, diff = self.force_loss(is_timeout=True)
-                break
-            end_time = time.time()
-            if board != self.board._board:
-                winner, diff = self.force_loss(is_board=True)
-                break
-            if action == "Q":
-                winner, diff = self.board.get_winner()
-                break
-            if action is None:
-                continue
-            else:
-                es_time = end_time - start_time
-                if es_time > 60:
-                    print(f'\n{self.current_player} 思考超过 60s')
-                    winner, diff = self.force_loss(is_timeout=True)
-                    break
-                self.board._move(action, color)
-                if self.current_player == self.black_player:
-                    step_time["X"] = es_time
-                    total_time["X"] += es_time
-                else:
-                    step_time["O"] = es_time
-                    total_time["O"] += es_time
-                self.board.display(step_time, total_time)
-                if self.game_over():
-                    winner, diff = self.board.get_winner()
-                    break
-        print('\n=====游戏结束!=====\n')
-        self.board.display(step_time, total_time)
-        self.print_winner(winner)
-        if winner is not None and diff > -1:
-            result = {0: 'black_win', 1: 'white_win', 2: 'draw'}[winner]
+#     # 运行游戏
+#     def run(self):
+#         total_time = {"X": 0, "O": 0}
+#         step_time = {"X": 0, "O": 0}
+#         winner = None
+#         diff = -1
+#         print('\n=====开始游戏!=====\n')
+#         self.board.display(step_time, total_time)
+#         while True:
+#             self.current_player = self.switch_player(self.black_player, self.white_player)
+#             start_time = time.time()
+#             color = "X" if self.current_player == self.black_player else "O"
+#             legal_actions = list(self.board.get_legal_actions(color))
+#             if len(legal_actions) == 0:
+#                 if self.game_over():
+#                     winner, diff = self.board.get_winner()
+#                     break
+#                 else:
+#                     continue
+#             board = deepcopy(self.board._board)
+#             try:
+#                 action = self.current_player.get_move(self.board)
+#                 if action == "Q":
+#                     break
+#                 if action not in legal_actions:
+#                     print("你落子不符合规则, 请重新落子！")
+#                     continue
+#             except Exception as e:
+#                 winner, diff = self.force_loss(is_timeout=True)
+#                 break
+#             end_time = time.time()
+#             if board != self.board._board:
+#                 winner, diff = self.force_loss(is_board=True)
+#                 break
+#             if action == "Q":
+#                 winner, diff = self.board.get_winner()
+#                 break
+#             if action is None:
+#                 continue
+#             else:
+#                 es_time = end_time - start_time
+#                 if es_time > 60:
+#                     print(f'\n{self.current_player} 思考超过 60s')
+#                     winner, diff = self.force_loss(is_timeout=True)
+#                     break
+#                 self.board._move(action, color)
+#                 if self.current_player == self.black_player:
+#                     step_time["X"] = es_time
+#                     total_time["X"] += es_time
+#                 else:
+#                     step_time["O"] = es_time
+#                     total_time["O"] += es_time
+#                 self.board.display(step_time, total_time)
+#                 if self.game_over():
+#                     winner, diff = self.board.get_winner()
+#                     break
+#         print('\n=====游戏结束!=====\n')
+#         self.board.display(step_time, total_time)
+#         self.print_winner(winner)
+#         if winner is not None and diff > -1:
+#             result = {0: 'black_win', 1: 'white_win', 2: 'draw'}[winner]
 
-    # 判断游戏是否结束
-    def game_over(self):
-        b_list = list(self.board.get_legal_actions('X'))
-        w_list = list(self.board.get_legal_actions('O'))
-        is_over = len(b_list) == 0 and len(w_list) == 0
-        return is_over
+#     # 判断游戏是否结束
+#     def game_over(self):
+#         b_list = list(self.board.get_legal_actions('X'))
+#         w_list = list(self.board.get_legal_actions('O'))
+#         is_over = len(b_list) == 0 and len(w_list) == 0
+#         return is_over
 
 # 人类玩家类
-class HumanPlayer:
-    def __init__(self, color):
-        self.color = color
+# class HumanPlayer:
+#     def __init__(self, color):
+#         self.color = color
 
-    def get_move(self, game):
-        # 确保 game 是 ReversiGame 实例
-        if not isinstance(game, ReversiGame):
-            print('错误：game 不是 ReversiGame 实例')
-            return None
-        import threading
-        import queue
-        move_queue = queue.Queue()
+#     def get_move(self, game):
+#         # 确保 game 是 ReversiGame 实例
+#         if not isinstance(game, ReversiGame):
+#             print('错误：game 不是 ReversiGame 实例')
+#             return None
+#         import threading
+#         import queue
+#         move_queue = queue.Queue()
 
-        def on_click(event):
-            col = event.x // game.CELL_SIZE
-            row = event.y // game.CELL_SIZE
-            action = chr(ord('A') + col) + str(row + 1)
-            if action in game.get_legal_actions(self.color):
-                move_queue.put(action)
-                game.canvas.unbind('<Button-1>')
+#         def on_click(event):
+#             col = event.x // game.CELL_SIZE
+#             row = event.y // game.CELL_SIZE
+#             action = chr(ord('A') + col) + str(row + 1)
+#             if action in game.get_legal_actions(self.color):
+#                 move_queue.put(action)
+#                 game.canvas.unbind('<Button-1>')
 
-        game.canvas.bind('<Button-1>', on_click)
-        try:
-            return move_queue.get(timeout=60)
-        except queue.Empty:
-            print('思考超过 60s，自动结束当前操作。')
-            return None
+#         game.canvas.bind('<Button-1>', on_click)
+#         try:
+#             return move_queue.get(timeout=60)
+#         except queue.Empty:
+#             print('思考超过 60s，自动结束当前操作。')
+#             return None
 
 # AI 玩家类
 class AIPlayer:
