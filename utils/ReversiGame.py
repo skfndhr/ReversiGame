@@ -18,6 +18,8 @@ class ReversiGame:
     def __init__(self, root,mode):
         self.root = root
         self.mode=mode
+        self.col=None
+        self.row=None
         self.ai_player=AIPlayer(self.mode)
         self.root.title('黑白棋')
         self.canvas = tk.Canvas(root, width=BOARD_SIZE * CELL_SIZE, height=BOARD_SIZE * CELL_SIZE, bg='#3CB371')
@@ -180,6 +182,12 @@ class ReversiGame:
                     x = j * CELL_SIZE + CELL_SIZE // 2
                     y = i * CELL_SIZE + CELL_SIZE // 2
                     self.canvas.create_oval(x - 35, y - 35, x + 35, y + 35, fill='black', outline='gray', width=2)
+        # 绘制上一次落子的位置
+        if self.col is not None and self.row is not None:
+            x = self.col * CELL_SIZE + CELL_SIZE // 2
+            y = self.row * CELL_SIZE + CELL_SIZE // 2
+            self.canvas.create_oval(x - 8, y - 8, x + 8, y + 8, fill='red', outline='gray', width=2)
+        # 显示当前玩家的合法落子位置
         self.show_hints()
         
     def show_hints(self):
@@ -201,6 +209,8 @@ class ReversiGame:
     def on_click(self, event):
         col = event.x // CELL_SIZE
         row = event.y // CELL_SIZE
+        self.col=col
+        self.row=row
         # 检查当前玩家的合法移动        
         if self.is_valid_move(row, col, self.current_player):
             self.make_move(row, col)
@@ -259,9 +269,13 @@ class ReversiGame:
             move = self.ai_player.get_move(self)
             if move is not None:
                 row, col = move
+                self.col=col
+                self.row=row
                 self.make_move(row, col)
             else:
                 row, col = random.choice(valid_moves)
+                self.col=col
+                self.row=row
                 self.make_move(row, col)
                 print("AI 未找到合适的走法")
         else:
