@@ -9,3 +9,5 @@ game的实现和可视化在utils/ReversiGame
 AiPlayer的实现在utils/AiPlayer
 
 运行main.py即可进行游戏，AI的思考时间被设置为5s，可以在源文件更改。
+
+可以通过运行setup文件夹下的安装包直接进行安装
