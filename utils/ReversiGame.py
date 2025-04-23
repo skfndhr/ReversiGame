@@ -2,6 +2,7 @@ import tkinter as tk
 import time
 import tkinter.messagebox as messagebox
 import random
+from utils.AiPlayer import AIPlayer
 # 棋盘大小
 BOARD_SIZE = 8
 # 每个格子的大小
@@ -17,8 +18,10 @@ class ReversiGame:
     def __init__(self, root,mode):
         self.root = root
         self.mode=mode
+        self.ai_player=AIPlayer(self.mode)
         self.root.title('黑白棋')
         self.canvas = tk.Canvas(root, width=BOARD_SIZE * CELL_SIZE, height=BOARD_SIZE * CELL_SIZE, bg='#3CB371')
+        # self.canvas.resizable(False, False)
         self.canvas.pack()
         self.board = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.hints = []
@@ -27,7 +30,7 @@ class ReversiGame:
         self.score_label.pack()
         self.initialize_board()
         self.draw_board()
-
+    
 
 
         if self.mode==1:
@@ -39,6 +42,14 @@ class ReversiGame:
         self.reset_button = tk.Button(root, text='重新开始', command=self.reset_game)
         self.reset_button.pack()
 
+    def copy(self):
+        import copy
+        new_game = ReversiGame(self.root, self.mode)
+        new_game.board = copy.deepcopy(self.board)
+        new_game.current_player = self.current_player
+        new_game.hints = []
+        return new_game
+
     def initialize_board(self):
         self.board = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.board[3][3] = 1
@@ -47,14 +58,27 @@ class ReversiGame:
         self.board[4][4] = 1
 
     def reset_game(self):
-        self.initialize_board()
-        self.current_player = 1
-        self.draw_board()
-        self.update_score()
-        # 清空提示
-        for hint in self.hints:
-            self.canvas.delete(hint)
-        self.hints = []
+        if self.mode==0:
+            self.initialize_board()
+            self.current_player = 1
+            self.draw_board()
+            self.update_score()
+            # 清空提示
+            for hint in self.hints:
+                self.canvas.delete(hint)
+            self.hints = []
+        else:
+            self.initialize_board()
+            self.current_player = 1
+            self.draw_board()
+            self.update_score()
+            # 清空提示
+            for hint in self.hints:
+                self.canvas.delete(hint)
+            self.hints = []
+            if self.mode==1:
+                self.make_move(3, 5)  # 机器先手
+
 
     def update_score(self):
         white_score = sum(row.count(1) for row in self.board)
@@ -103,7 +127,40 @@ class ReversiGame:
         except Exception as e:
             print(f'游戏结束判断时出错: {e}')
 
+    def make_move_test(self, row, col):
+        self.board[row][col] = self.current_player
+        opponent = 3 - self.current_player
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+
+        for dr, dc in directions:
+            to_flip = []
+            r, c = row + dr, col + dc
+
+            while 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE and self.board[r][c] == opponent:
+                to_flip.append((r, c))
+                r += dr
+                c += dc
+
+            if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE and self.board[r][c] == self.current_player:
+                for r_flip, c_flip in to_flip:
+                    self.board[r_flip][c_flip] = self.current_player
+
+        # 切换玩家
+        opponent = 3 - self.current_player
+        if self.has_valid_move(opponent):
+            self.current_player = opponent
+        elif self.has_valid_move(self.current_player):
+            # 对手无合法移动，当前玩家继续
+            pass
+        else:
+            # 双方都无合法移动，游戏结束
+            pass
+        self.update_score()
+        
+
+
     def draw_board(self):
+        self.canvas.delete('all')
         # 绘制棋盘网格
         for i in range(BOARD_SIZE):
             for j in range(BOARD_SIZE):
@@ -124,7 +181,7 @@ class ReversiGame:
                     y = i * CELL_SIZE + CELL_SIZE // 2
                     self.canvas.create_oval(x - 35, y - 35, x + 35, y + 35, fill='black', outline='gray', width=2)
         self.show_hints()
-
+        
     def show_hints(self):
         for hint in self.hints:
             self.canvas.delete(hint)
@@ -140,6 +197,7 @@ class ReversiGame:
                     hint = self.canvas.create_rectangle(x1, y1, x2, y2, fill='yellow', stipple='gray50')
                     self.hints.append(hint)
 
+
     def on_click(self, event):
         col = event.x // CELL_SIZE
         row = event.y // CELL_SIZE
@@ -147,9 +205,19 @@ class ReversiGame:
         if self.is_valid_move(row, col, self.current_player):
             self.make_move(row, col)
             self.draw_board()
-            while self.mode==self.current_player:
-                self.ai_move()
-                self.draw_board()
+            # 检查是否轮到 AI 下棋
+            if self.mode == self.current_player:
+                self.root.after(100, self.ai_move_wrapper)
+
+    def ai_move_wrapper(self):
+        if self.mode == self.current_player:
+            self.ai_move()
+            self.draw_board()
+            # 递归调用，直到 AI 下完或者轮到玩家
+            if self.mode == self.current_player:
+                self.root.after(100, self.ai_move_wrapper)
+
+
 
 
 
@@ -183,31 +251,49 @@ class ReversiGame:
                     break
 
         return False
+
+
     def ai_move(self):
-        
-        valid_moves = [(i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE) if self.is_valid_move(i, j, self.mode)]
+        valid_moves = self.get_legal_moves(self.current_player)
         if valid_moves:
-            row, col = random.choice(valid_moves)
-            self.make_move(row, col)
+            move = self.ai_player.get_move(self)
+            if move is not None:
+                row, col = move
+                self.make_move(row, col)
+            else:
+                row, col = random.choice(valid_moves)
+                self.make_move(row, col)
+                print("AI 未找到合适的走法")
         else:
-            # 如果没有合法移动，切换玩家
             opponent = 3 - self.current_player
+            if not self.has_valid_move(opponent):
+                white_score = sum(row.count(1) for row in self.board)
+                black_score = sum(row.count(2) for row in self.board)
+                if white_score > black_score:
+                    messagebox.showinfo('游戏结束', '白棋获胜！')
+                elif white_score < black_score:
+                    messagebox.showinfo('游戏结束', '黑棋获胜！')
+                else:
+                    messagebox.showinfo('游戏结束', '平局！')
+            else:
+                self.current_player = opponent
             self.update_score()
-            try:
-                if not self.has_valid_move(1) and not self.has_valid_move(2):
-                    white_score = sum(row.count(1) for row in self.board)
-                    black_score = sum(row.count(2) for row in self.board)
-                    if white_score > black_score:
-                        messagebox.showinfo('游戏结束', '白棋获胜！')
-                    elif white_score < black_score:
-                        messagebox.showinfo('游戏结束', '黑棋获胜！')
-                    else:
-                        messagebox.showinfo('游戏结束', '平局！')
-            except Exception as e:
-                print(f'游戏结束判断时出错: {e}')
 
 
-if __name__ == '__main__':
-    root = tk.Tk()
-    game = ReversiGame(root)
-    root.mainloop()
+
+
+                
+    def get_legal_moves(self, player):
+        valid_moves = []
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
+                if self.is_valid_move(i, j, player):
+                    valid_moves.append((i, j))
+        return valid_moves
+
+
+
+# if __name__ == '__main__':
+#     root = tk.Tk()
+#     game = ReversiGame(root)
+#     root.mainloop()

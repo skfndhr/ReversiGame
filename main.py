@@ -6,27 +6,29 @@ from utils.Menu import mainMenu
 
 
 def ai_callback(mode):
-    if mode == 1:
+    if tk._default_root is None:
         root = tk.Tk()
-        Game = ReversiGame(root,mode)
-        root.mainloop()
     else:
-        root = tk.Tk()
-        Game = ReversiGame(root,mode)
-        root.mainloop()
+        root = tk._default_root
+    Game = ReversiGame(root,mode)
+    # root.mainloop()
 
 
 def main_callback(mode):
     if mode == 0:
-        root = tk.Tk()
+        if tk._default_root is None:
+            root = tk.Tk()
+        else:
+            root = tk._default_root
         Game = ReversiGame(root,mode)
-        root.mainloop()
+        # root.mainloop()
     else:
-        root = tk.Tk()
+        if tk._default_root is None:
+            root = tk.Tk()
+        else:
+            root = tk._default_root
         AiMenu = aiMenu(root, ai_callback)
-        root.mainloop() 
-
-
+        # root.mainloop() 
 
 
 

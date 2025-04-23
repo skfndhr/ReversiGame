@@ -81,5 +81,5 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     menu = mainMenu(root, main_callback)
-    root.mainloop()    
+    root.mainloop()
 
