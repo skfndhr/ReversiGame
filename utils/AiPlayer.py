@@ -6,7 +6,7 @@ from copy import deepcopy
 
 
 class AIPlayer:
-    def __init__(self, color, time_limit=0.5):
+    def __init__(self, color, time_limit=5):
         self.time_limit = time_limit
         self.color = color
 
