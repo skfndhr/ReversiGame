@@ -6,12 +6,21 @@ from copy import deepcopy
 
 
 class AIPlayer:
-    def __init__(self, color, time_limit=5):
+    def __init__(self, color, time_limit=3):
         self.time_limit = time_limit
         self.color = color
 
     # MCTS 算法
     def mcts(self, board):
+        legal_actions = board.get_legal_moves(board.current_player)
+        if not legal_actions:
+            return None
+        elif len(legal_actions) == 1:
+            return legal_actions[0]
+        else:
+            for col,row in legal_actions:
+                if (col==0 and row==0) or (col==7 and row==7) or (col==0 and row==7) or (col==7 and row==0):
+                    return col,row
         root = TreeNode(None, self.color)
         start_time = time.time()
         while time.time() - start_time < self.time_limit:
